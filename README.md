@@ -1,6 +1,7 @@
 # 🛡️ Advanced Network Traffic Obfuscation System
 
 A sophisticated multi-layer network privacy protection system that implements three distinct architectures for traffic obfuscation and ISP evasion.
+<img width="886" height="606" alt="terminal" src="https://github.com/user-attachments/assets/9baae3b8-0256-429f-9259-da7d069b1e13" />
 
 ## 🎯 Overview
 
@@ -393,5 +394,6 @@ We welcome feature requests! Please:
 ---
 
 **⚡ Built for privacy advocates, researchers, and security professionals**
+
 
 *Stay safe, stay private, stay anonymous.*
