@@ -1,0 +1,37 @@
+{
+  "test_mode": true,
+  "description": "Free test configuration - no VPS required",
+  
+  "free_shadowsocks_servers": [
+    {
+      "server": "free-ss1.sshmax.xyz",
+      "server_port": 443,
+      "password": "sshmax.xyz",
+      "method": "aes-256-cfb",
+      "remarks": "Free Test Server 1",
+      "plugin": "",
+      "plugin_opts": ""
+    },
+    {
+      "server": "free-ss2.sshmax.xyz", 
+      "server_port": 80,
+      "password": "sshmax.xyz",
+      "method": "aes-256-cfb", 
+      "remarks": "Free Test Server 2",
+      "plugin": "",
+      "plugin_opts": ""
+    }
+  ],
+  
+  "free_tor_bridges": [
+    "obfs4 192.95.36.142:443 CDF2E852BF539B82BD10E27E9115A31734E378C2 cert=qUVQ0srL1JI/vO6V6m/24anYXiJD3QP2HgzUKQtQ7GRqqUvs7P+tG43RtAqdhLOALP7DJQ iat-mode=1",
+    "obfs4 37.218.245.14:38224 D9A82D2F9C2F65A18407B1D2B764F130847F8B5D cert=bjRaMrr1BRiAW8IE9U5z27fQaYgOdD1XfFAqJmWI2ncgQn8iP/y8TGjTCbFeEfC3gSj7GQ iat-mode=0"
+  ],
+  
+  "test_instructions": {
+    "step1": "Install only Tor (no VPS needed): 'sudo apt install tor' or 'choco install tor'",
+    "step2": "Run: python main.py",
+    "step3": "Select option 2 (Tor + meek) for completely free testing",
+    "step4": "Or select option 3 (Multi-layer) and choose free Shadowsocks servers"
+  }
+}
