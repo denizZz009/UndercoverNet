@@ -14,8 +14,122 @@ import socket
 from typing import Optional, Dict, List
 import ipaddress
 import configparser
+import struct
 
 logger = logging.getLogger(__name__)
+
+class SOCKS5Tunnel:
+    """Pure Python SOCKS5 tunnel implementation"""
+    
+    def __init__(self, local_port, proxy_host, proxy_port, target_host, target_port):
+        self.local_port = local_port
+        self.proxy_host = proxy_host
+        self.proxy_port = proxy_port
+        self.target_host = target_host
+        self.target_port = target_port
+        self.server_socket = None
+        self.running = False
+    
+    async def start(self):
+        """Start the SOCKS5 tunnel server"""
+        self.server_socket = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
+        self.server_socket.setsockopt(socket.SOL_SOCKET, socket.SO_REUSEADDR, 1)
+        self.server_socket.bind(('127.0.0.1', self.local_port))
+        self.server_socket.listen(5)
+        self.server_socket.setblocking(False)
+        
+        self.running = True
+        asyncio.create_task(self._accept_connections())
+    
+    async def _accept_connections(self):
+        """Accept incoming connections and tunnel them"""
+        loop = asyncio.get_event_loop()
+        
+        while self.running:
+            try:
+                client_socket, addr = await loop.sock_accept(self.server_socket)
+                asyncio.create_task(self._handle_client(client_socket))
+            except Exception as e:
+                if self.running:
+                    logger.error(f"Error accepting connection: {e}")
+                break
+    
+    async def _handle_client(self, client_socket):
+        """Handle individual client connection"""
+        try:
+            # Connect to SOCKS5 proxy
+            proxy_socket = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
+            await asyncio.get_event_loop().sock_connect(proxy_socket, (self.proxy_host, self.proxy_port))
+            
+            # SOCKS5 handshake
+            await self._socks5_handshake(proxy_socket)
+            
+            # Request connection to target
+            await self._socks5_connect(proxy_socket, self.target_host, self.target_port)
+            
+            # Start bidirectional relay
+            await self._relay_data(client_socket, proxy_socket)
+            
+        except Exception as e:
+            logger.error(f"Error handling client: {e}")
+        finally:
+            try:
+                client_socket.close()
+                if 'proxy_socket' in locals():
+                    proxy_socket.close()
+            except:
+                pass
+    
+    async def _socks5_handshake(self, sock):
+        """Perform SOCKS5 handshake"""
+        # Send handshake
+        await asyncio.get_event_loop().sock_sendall(sock, b'\x05\x01\x00')  # Version 5, 1 method, no auth
+        
+        # Receive response
+        response = await asyncio.get_event_loop().sock_recv(sock, 2)
+        if response != b'\x05\x00':
+            raise Exception("SOCKS5 handshake failed")
+    
+    async def _socks5_connect(self, sock, host, port):
+        """Request SOCKS5 connection to target"""
+        # Build connection request
+        request = b'\x05\x01\x00\x03'  # Version, connect, reserved, domain name
+        request += bytes([len(host)]) + host.encode()
+        request += struct.pack('>H', port)
+        
+        await asyncio.get_event_loop().sock_sendall(sock, request)
+        
+        # Receive response
+        response = await asyncio.get_event_loop().sock_recv(sock, 10)
+        if len(response) < 2 or response[1] != 0:
+            raise Exception("SOCKS5 connection failed")
+    
+    async def _relay_data(self, client_sock, proxy_sock):
+        """Relay data between client and proxy"""
+        try:
+            await asyncio.gather(
+                self._relay_direction(client_sock, proxy_sock),
+                self._relay_direction(proxy_sock, client_sock)
+            )
+        except:
+            pass
+    
+    async def _relay_direction(self, from_sock, to_sock):
+        """Relay data in one direction"""
+        try:
+            while True:
+                data = await asyncio.get_event_loop().sock_recv(from_sock, 4096)
+                if not data:
+                    break
+                await asyncio.get_event_loop().sock_sendall(to_sock, data)
+        except:
+            pass
+    
+    def stop(self):
+        """Stop the tunnel"""
+        self.running = False
+        if self.server_socket:
+            self.server_socket.close()
 
 class WireGuardHandler:
     """
@@ -313,31 +427,22 @@ class WireGuardHandler:
             # Find available local port for tunnel
             tunnel_port = await self._find_available_port()
             
-            # Create socat tunnel command
-            if platform.system() == 'Windows':
-                # For Windows, you might need a different approach
-                # This is simplified - real implementation would need proper Windows tools
-                logger.warning("SOCKS5 tunnel setup not fully implemented for Windows")
-                return
-            else:
-                # Linux/macOS socat command
-                socat_cmd = [
-                    'socat',
-                    f'UDP-LISTEN:{tunnel_port},reuseaddr,fork',
-                    f'SOCKS5:{proxy_host}:{endpoint_host}:{endpoint_port},socksport={proxy_port}'
-                ]
-                
-                # Start socat process
-                self.socat_process = await asyncio.create_subprocess_exec(
-                    *socat_cmd,
-                    stdout=asyncio.subprocess.PIPE,
-                    stderr=asyncio.subprocess.PIPE
-                )
-                
-                # Update WireGuard endpoint to use local tunnel
-                self.config['Peer']['Endpoint'] = f"127.0.0.1:{tunnel_port}"
-                
-                logger.info(f"SOCKS5 tunnel established: 127.0.0.1:{tunnel_port} -> {endpoint_host}:{endpoint_port}")
+            # Create actual SOCKS5 tunnel using Python socket programming
+            self.socks5_tunnel = SOCKS5Tunnel(
+                local_port=tunnel_port,
+                proxy_host=proxy_host,
+                proxy_port=proxy_port,
+                target_host=endpoint_host,
+                target_port=int(endpoint_port)
+            )
+            
+            # Start the tunnel
+            await self.socks5_tunnel.start()
+            
+            # Update WireGuard endpoint to use local tunnel
+            self.config['Peer']['Endpoint'] = f"127.0.0.1:{tunnel_port}"
+            
+            logger.info(f"SOCKS5 tunnel established: 127.0.0.1:{tunnel_port} -> {endpoint_host}:{endpoint_port}")
             
         except Exception as e:
             logger.error(f"Failed to setup SOCKS5 tunnel: {e}")
@@ -479,6 +584,10 @@ class WireGuardHandler:
             if hasattr(self, 'socat_process') and self.socat_process:
                 self.socat_process.terminate()
                 await self.socat_process.wait()
+            
+            # Stop SOCKS5 tunnel if running
+            if hasattr(self, 'socks5_tunnel') and self.socks5_tunnel:
+                self.socks5_tunnel.stop()
             
             # Clean up configuration file
             if self.config_file and os.path.exists(self.config_file):
