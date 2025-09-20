@@ -1,0 +1,58 @@
+# Advanced Network Traffic Obfuscation System
+# Python Dependencies
+
+# Core networking and async support
+aiohttp==3.9.1
+asyncio-mqtt==0.13.0
+
+# Tor integration
+stem==1.8.2
+
+# Packet manipulation and network analysis
+scapy==2.5.0
+
+# Windows packet interception (Windows only)
+pydivert==2.1.0; sys_platform == "win32"
+
+# Linux packet filtering (Linux only)
+netfilterqueue==1.1.0; sys_platform == "linux"
+
+# DNS and HTTP utilities
+dnspython==2.4.2
+requests==2.31.0
+
+# Configuration and data handling
+configparser==6.0.0
+
+# Logging and monitoring
+psutil==5.9.6
+
+# Cryptography and security
+cryptography==41.0.8
+pycryptodome==3.19.0
+
+# Optional: Additional obfuscation tools
+# Install these manually if needed:
+
+# For Shadowsocks support:
+# shadowsocks-libev (install via package manager)
+# v2ray-plugin (for additional obfuscation)
+
+# For WireGuard support:
+# wireguard-tools (install via package manager)
+
+# For Tor and obfs4 support:
+# tor (install via package manager)
+# obfs4proxy (install via package manager)
+# meek-client (install via package manager)
+
+# Platform-specific networking tools
+# Windows: WinDivert (included with pydivert)
+# Linux: iptables, netfilterqueue
+# macOS: pfctl
+
+# Development and testing dependencies (optional)
+pytest==7.4.3
+pytest-asyncio==0.21.1
+black==23.11.0
+flake8==6.1.0

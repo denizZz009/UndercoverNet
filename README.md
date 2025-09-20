@@ -1,5 +1,3 @@
-# UndercoverNet
-
 # 🛡️ Advanced Network Traffic Obfuscation System
 
 A sophisticated multi-layer network privacy protection system that implements three distinct architectures for traffic obfuscation and ISP evasion.

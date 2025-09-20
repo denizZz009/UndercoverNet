@@ -1,0 +1,142 @@
+{
+  "application": {
+    "name": "Advanced Network Traffic Obfuscation System",
+    "version": "1.0.0",
+    "debug": false,
+    "log_level": "INFO"
+  },
+  
+  "dns": {
+    "doh_providers": {
+      "cloudflare": {
+        "url": "https://cloudflare-dns.com/dns-query",
+        "ip": "1.1.1.1",
+        "description": "Cloudflare DNS"
+      },
+      "google": {
+        "url": "https://dns.google/dns-query",
+        "ip": "8.8.8.8",
+        "description": "Google Public DNS"
+      },
+      "quad9": {
+        "url": "https://dns.quad9.net/dns-query",
+        "ip": "9.9.9.9",
+        "description": "Quad9 DNS"
+      },
+      "adguard": {
+        "url": "https://dns.adguard.com/dns-query",
+        "ip": "94.140.14.14",
+        "description": "AdGuard DNS"
+      }
+    },
+    "default_provider": "cloudflare",
+    "local_dns_port": 5353,
+    "fallback_servers": ["8.8.8.8", "1.1.1.1"]
+  },
+  
+  "firewall": {
+    "kill_switch_enabled": true,
+    "allowed_local_networks": [
+      "127.0.0.1/8",
+      "10.0.0.0/8",
+      "172.16.0.0/12",
+      "192.168.0.0/16",
+      "169.254.0.0/16"
+    ],
+    "backup_rules": true,
+    "auto_restore": true
+  },
+  
+  "padding": {
+    "target_packet_size": 512,
+    "min_delay_ms": 50,
+    "max_delay_ms": 150,
+    "dummy_traffic_interval_seconds": 5,
+    "advanced_mode": false,
+    "burst_protection": true
+  },
+  
+  "architectures": {
+    "wireguard_obfs4": {
+      "description": "WireGuard VPN over obfs4 obfuscation",
+      "enabled": true,
+      "default_interface": "wg0"
+    },
+    "tor_meek": {
+      "description": "Tor over meek domain fronting",
+      "enabled": true,
+      "default_provider": "azure"
+    },
+    "multilayer": {
+      "description": "Multi-layer Shadowsocks + WireGuard/Tor",
+      "enabled": true,
+      "default_second_layer": "wireguard"
+    }
+  },
+  
+  "obfs4": {
+    "sample_bridges": [
+      "obfs4 192.95.36.142:443 CDF2E852BF539B82BD10E27E9115A31734E378C2 cert=qUVQ0srL1JI/vO6V6m/24anYXiJD3QP2HgzUKQtQ7GRqqUvs7P+tG43RtAqdhLOALP7DJQ iat-mode=1",
+      "obfs4 37.218.245.14:38224 D9A82D2F9C2F65A18407B1D2B764F130847F8B5D cert=bjRaMrr1BRiAW8IE9U5z27fQaYgOdD1XfFAqJmWI2ncgQn8iP/y8TGjTCbFeEfC3gSj7GQ iat-mode=0",
+      "obfs4 85.31.186.98:443 00DC6C8430AB8FED9A5D0F9F3E8E4F0BB7E9B9BB cert=4R7xAx9LBK8AKFnIXmQ8F7QPqAoMJ7Q8D+TCzbT8zVmkM7/vGkwZL4zFzXWAA iat-mode=0"
+    ],
+    "default_iat_mode": "0",
+    "auto_bridge_selection": true
+  },
+  
+  "meek": {
+    "providers": {
+      "azure": {
+        "front_domain": "ajax.aspnetcdn.com",
+        "meek_host": "meek.azureedge.net",
+        "description": "Microsoft Azure CDN"
+      },
+      "cloudflare": {
+        "front_domain": "cdnjs.cloudflare.com",
+        "meek_host": "meek.bamsoftware.com",
+        "description": "Cloudflare CDN"
+      },
+      "amazon": {
+        "front_domain": "d2zfqthxsdq309.cloudfront.net",
+        "meek_host": "meek.bamsoftware.com",
+        "description": "Amazon CloudFront"
+      }
+    },
+    "default_provider": "azure",
+    "auto_provider_selection": true,
+    "test_providers_on_start": true
+  },
+  
+  "shadowsocks": {
+    "sample_servers": [
+      {
+        "server": "198.199.101.152",
+        "server_port": 8388,
+        "password": "u1rRWTssNv0p",
+        "method": "aes-256-cfb",
+        "plugin": "",
+        "plugin_opts": "",
+        "remarks": "Sample Server 1"
+      },
+      {
+        "server": "207.148.22.139",
+        "server_port": 8388,
+        "password": "u1rRWTssNv0p",
+        "method": "aes-256-cfb",
+        "plugin": "",
+        "plugin_opts": "",
+        "remarks": "Sample Server 2"
+      }
+    ],
+    "default_method": "aes-256-gcm",
+    "timeout": 300,
+    "auto_server_selection": true
+  },
+  
+  "wireguard": {
+    "default_interface": "wg0",
+    "default_dns": ["1.1.1.1", "8.8.8.8"],
+    "persistent_keepalive": 25,
+    "allowed_ips": ["0.0.0.0/0", "::/0"]
+  }
+}
